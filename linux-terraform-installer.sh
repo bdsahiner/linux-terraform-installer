@@ -1,15 +1,15 @@
 #!/bin/bash
 
+command_exists() {
+    command -v "$@" > /dev/null 2>&1
+}
+
 get_distribution() {
     lsb_dist=""
     if [ -r /etc/os-release ]; then
         lsb_dist="$(. /etc/os-release && echo "$ID")"
     fi
     echo "$lsb_dist"
-}
-
-command_exists() {
-  command -v "$@" > /dev/null 2>&1
 }
 
 check_forked() {
@@ -31,51 +31,51 @@ check_forked() {
                 fi
                 dist_version="$(sed 's/\/.*//' /etc/debian_version | sed 's/\..*//')"
                 case "$dist_version" in
-                    12)
-                        dist_version="bookworm"
-                    ;;
-                    11)
-                        dist_version="bullseye"
-                    ;;
-                    10)
-                        dist_version="buster"
-                    ;;
-                    9)
-                        dist_version="stretch"
-                    ;;
-                    8)
-                        dist_version="jessie"
-                    ;;
+                    12) dist_version="bookworm";;
+                    11) dist_version="bullseye";;
+                    10) dist_version="buster";;
+                    9) dist_version="stretch";;
+                    8) dist_version="jessie";;
                 esac
             fi
         fi
     fi
 }
 
-lsb_dist=$( get_distribution )
+lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
 
 check_forked
 
-dist_version=""
 case "$lsb_dist" in
-    ubuntu|debian|raspbian)
+    ubuntu)
         if command_exists lsb_release; then
             dist_version="$(lsb_release --codename | cut -f2)"
         fi
         if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
             dist_version="$(. /etc/lsb-release && echo "$DISTRIB_CODENAME")"
         fi
-        echo "Operating System: $lsb_dist"
-        echo "Version: $dist_version"
-    ;;
-    centos|rhel)
+        ;;
+    debian|raspbian)
+        dist_version="$(sed 's/\/.*//' /etc/debian_version | sed 's/\..*//')"
+        case "$dist_version" in
+            12) dist_version="bookworm";;
+            11) dist_version="bullseye";;
+            10) dist_version="buster";;
+            9) dist_version="stretch";;
+            8) dist_version="jessie";;
+        esac
+        ;;
+    centos|rhel|amazon)
         if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
             dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
         fi
-        echo "Operating System: $lsb_dist"
-        echo "Version: $dist_version"
-    ;;
+        ;;
+    fedora)
+        if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
+            dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
+        fi
+        ;;
     *)
         if command_exists lsb_release; then
             dist_version="$(lsb_release --release | cut -f2)"
@@ -83,16 +83,11 @@ case "$lsb_dist" in
         if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
             dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
         fi
-        if [ -z "$lsb_dist" ]; then
-          echo "Operating System: Unknown Linux"
-        else
-          echo "Operating System: $lsb_dist"
-        fi
-        if [ -n "$dist_version" ]; then
-          echo "Version: $dist_version"
-        fi
-    ;;
+        ;;
 esac
+
+echo "Operating System: $lsb_dist"
+echo "Version: $dist_version"
 
 echo "Installing Terraform..."
 
@@ -101,12 +96,12 @@ case "$lsb_dist" in
         if command_exists sudo; then
             sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
             wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
-            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $dist_version main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
             sudo apt-get update && sudo apt-get install -y terraform
         else
             apt-get update && apt-get install -y gnupg software-properties-common
             wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
-            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $dist_version main" | tee /etc/apt/sources.list.d/hashicorp.list
             apt-get update && apt-get install -y terraform
         fi
         ;;
@@ -130,6 +125,17 @@ case "$lsb_dist" in
             dnf install -y dnf-plugins-core
             dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
             dnf -y install terraform
+        fi
+        ;;
+    amazon)
+        if command_exists sudo; then
+            sudo yum install -y yum-utils
+            sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+            sudo yum -y install terraform
+        else
+            yum install -y yum-utils
+            yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+            yum -y install terraform
         fi
         ;;
     *)
