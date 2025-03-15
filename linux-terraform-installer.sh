@@ -3,7 +3,7 @@
 get_distribution() {
     lsb_dist=""
     if [ -r /etc/os-release ]; then
-        lsb_dist="$( /etc/os-release && echo "$ID")"
+        lsb_dist="$(sudo /etc/os-release && echo "$ID")"
     fi
     echo "$lsb_dist"
 }
@@ -110,7 +110,7 @@ else
         ;;
         centos|rhel)
             if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
-                dist_version="$( /etc/os-release && echo "$VERSION_ID")"
+                dist_version="$(sudo /etc/os-release && echo "$VERSION_ID")"
             fi
         ;;
         *)
@@ -118,7 +118,7 @@ else
                 dist_version="$(lsb_release --release | cut -f2)"
             fi
             if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
-                dist_version="$( /etc/os-release && echo "$VERSION_ID")"
+                dist_version="$(sudo /etc/os-release && echo "$VERSION_ID")"
             fi
         ;;
     esac
