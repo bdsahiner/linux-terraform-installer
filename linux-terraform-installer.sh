@@ -3,7 +3,7 @@
 get_distribution() {
     lsb_dist=""
     if [ -r /etc/os-release ]; then
-        lsb_dist="$(. /etc/os-release && echo "$ID")"
+        lsb_dist="$( /etc/os-release && echo "$ID")"
     fi
     echo "$lsb_dist"
 }
@@ -74,49 +74,55 @@ if is_wsl; then
     exit 1
 fi
 
-case "$lsb_dist" in
-    ubuntu)
-        if command_exists lsb_release; then
-            dist_version="$(lsb_release --codename | cut -f2)"
-        fi
-        if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
-            dist_version="$(. /etc/lsb-release && echo "$DISTRIB_CODENAME")"
-        fi
-    ;;
-    debian|raspbian)
-        dist_version="$(sed 's/\/.*//' /etc/debian_version | sed 's/\..*//')"
-        case "$dist_version" in
-            12)
-                dist_version="bookworm"
-            ;;
-            11)
-                dist_version="bullseye"
-            ;;
-            10)
-                dist_version="buster"
-            ;;
-            9)
-                dist_version="stretch"
-            ;;
-            8)
-                dist_version="jessie"
-            ;;
-        esac
-    ;;
-    centos|rhel)
-        if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
-            dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
-        fi
-    ;;
-    *)
-        if command_exists lsb_release; then
-            dist_version="$(lsb_release --release | cut -f2)"
-        fi
-        if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
-            dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
-        fi
-    ;;
-esac
+if [ -r "/etc/upstream-release/lsb-release" ]; then
+    . /etc/upstream-release/lsb-release
+    lsb_dist="$(echo "$DISTRIB_ID" | tr '[:upper:]' '[:lower:]')"
+    dist_version="$DISTRIB_CODENAME"
+else
+    case "$lsb_dist" in
+        ubuntu)
+            if command_exists lsb_release; then
+                dist_version="$(lsb_release --codename | cut -f2)"
+            fi
+            if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
+                dist_version="$( /etc/lsb-release && echo "$DISTRIB_CODENAME")"
+            fi
+        ;;
+        debian|raspbian)
+            dist_version="$(sed 's/\/.*//' /etc/debian_version | sed 's/\..*//')"
+            case "$dist_version" in
+                12)
+                    dist_version="bookworm"
+                ;;
+                11)
+                    dist_version="bullseye"
+                ;;
+                10)
+                    dist_version="buster"
+                ;;
+                9)
+                    dist_version="stretch"
+                ;;
+                8)
+                    dist_version="jessie"
+                ;;
+            esac
+        ;;
+        centos|rhel)
+            if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
+                dist_version="$( /etc/os-release && echo "$VERSION_ID")"
+            fi
+        ;;
+        *)
+            if command_exists lsb_release; then
+                dist_version="$(lsb_release --release | cut -f2)"
+            fi
+            if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
+                dist_version="$( /etc/os-release && echo "$VERSION_ID")"
+            fi
+        ;;
+    esac
+fi
 
 check_forked
 
@@ -133,3 +139,24 @@ esac
 
 echo "$lsb_dist"
 echo "$dist_version"
+
+case "$lsb_dist" in
+    ubuntu|debian|raspbian)
+        sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+        gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+        sudo apt update
+        sudo apt-get install terraform
+    ;;
+    centos|rhel)
+        sudo yum install -y yum-utils
+        sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+        sudo yum -y install terraform
+    ;;
+    fedora)
+        sudo dnf install -y dnf-plugins-core
+        sudo dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+        sudo dnf -y install terraform
+    ;;
+esac
