@@ -13,18 +13,6 @@ get_distribution() {
     echo "$lsb_dist"
 }
 
-get_codename() {
-    dist_codename=""
-    if [ -r /etc/upstream-release/lsb-release ]; then
-        dist_codename="$(. /etc/upstream-release/lsb-release && echo "$DISTRIB_CODENAME")"
-    elif [ -r /etc/lsb-release ]; then
-        dist_codename="$(. /etc/lsb-release && echo "$DISTRIB_CODENAME")"
-    else
-        dist_codename="$(lsb_release -cs)"
-    fi
-    echo "$dist_codename"
-}
-
 check_forked() {
     if command -v lsb_release > /dev/null; then
         set +e
@@ -46,7 +34,6 @@ check_forked() {
 
 lsb_dist=$(get_distribution)
 lsb_dist=$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')
-dist_codename=$(get_codename)
 
 dist_version=""
 case "$lsb_dist" in
@@ -56,7 +43,7 @@ case "$lsb_dist" in
         gpg --dearmor | \
         sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
         echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-        https://apt.releases.hashicorp.com $dist_codename main" | \
+        https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
         sudo tee /etc/apt/sources.list.d/hashicorp.list
         sudo apt update
         sudo apt-get install terraform
@@ -73,7 +60,7 @@ case "$lsb_dist" in
         ;;
     fedora)
         sudo dnf install -y dnf-plugins-core
-        sudo dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+        sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
         sudo dnf -y install terraform
         ;;
     *)
@@ -83,3 +70,4 @@ case "$lsb_dist" in
 esac
 
 echo "Terraform installation completed successfully."
+
