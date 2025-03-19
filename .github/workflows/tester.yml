@@ -1,4 +1,4 @@
-name: tester
+name: Test Terraform Installer
 
 on:
   push:
@@ -13,19 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, debian:latest, fedora-latest]
+        os: [ubuntu, debian, fedora]
     container:
-      image: ${{ matrix.os }}
+      image: ${{ matrix.os }}:latest  # Pulls the latest version of each OS
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: execute permission
-        run: chmod +x terraform-installer.sh
+      - name: Install dependencies (Debian-based)
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'debian')
+        run: apt-get update && apt-get install -y wget gpg sudo
 
-      - name: run script
-        run: ./terraform-installer.sh
+      - name: Install dependencies (Fedora)
+        if: contains(matrix.os, 'fedora')
+        run: dnf install -y wget gnupg sudo
 
-      - name: verify
+      - name: Run the Terraform installer script
+        run: sh ./terraform-installer.sh  # No sudo needed
+
+      - name: Verify Terraform installation
         run: terraform --version
