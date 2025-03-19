@@ -21,8 +21,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: run the installer script
-        run: sh ./terraform-installer.sh
+      - name: execute permission
+        run: chmod +x terraform-installer.sh
 
-      - name: verify the installation
+      - name: run script
+        run: ./terraform-installer.sh
+
+      - name: verify
         run: terraform --version
