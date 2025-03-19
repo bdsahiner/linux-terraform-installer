@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: run the installer script
-        run: sudo sh ./terraform-installer.sh
+        run: sh ./terraform-installer.sh
 
       - name: verify the installation
         run: terraform --version
