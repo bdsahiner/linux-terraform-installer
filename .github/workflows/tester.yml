@@ -1,0 +1,28 @@
+name: tester
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, debian:latest, fedora-latest]
+    container:
+      image: ${{ matrix.os }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: run the installer script
+        run: sudo sh ./terraform-installer.sh
+
+      - name: verify the installation
+        run: terraform --version
