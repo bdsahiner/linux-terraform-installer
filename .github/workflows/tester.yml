@@ -68,15 +68,15 @@ jobs:
   centos:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/centos/centos:stream8
+      image: centos:7
     steps:
       - uses: actions/checkout@v3
-      - name: Fix CentOS DNS issue
-        run: echo "nameserver 8.8.8.8" > /etc/resolv.conf
-      - run: yum clean all && yum makecache
-      - run: yum install -y wget gnupg sudo
-      - run: sh ./terraform-installer.sh
-      - run: terraform --version
+      - name: Install dependencies
+        run: yum install -y wget gnupg sudo
+      - name: Run the Terraform installer script
+        run: sh ./terraform-installer.sh
+      - name: Verify Terraform installation
+        run: terraform --version
 
   rhel:
     runs-on: ubuntu-latest
