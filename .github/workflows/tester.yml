@@ -62,7 +62,7 @@ jobs:
   centos:
     runs-on: ubuntu-latest
     container:
-      image: centos:latest
+      image: quay.io/centos/centos:stream8
     steps:
       - uses: actions/checkout@v3
       - run: yum install -y wget gnupg sudo
@@ -84,6 +84,8 @@ jobs:
     container:
       image: amazonlinux:latest
     steps:
+      - name: Install tar
+        run: yum install -y tar
       - uses: actions/checkout@v3
       - run: yum install -y wget gnupg sudo
       - run: sh ./terraform-installer.sh
