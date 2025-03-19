@@ -13,24 +13,28 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu, debian, fedora]
+        os: [ubuntu, debian, fedora, zorinos, linuxmint, centos, rhel, amazonlinux]
     container:
-      image: ${{ matrix.os }}:latest  # Pulls the latest version of each OS
+      image: ${{ matrix.os }}:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Install dependencies (Debian-based)
-        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'debian')
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'debian') || contains(matrix.os, 'zorinos') || contains(matrix.os, 'linuxmint')
         run: apt-get update && apt-get install -y wget gpg sudo
 
       - name: Install dependencies (Fedora)
         if: contains(matrix.os, 'fedora')
         run: dnf install -y wget gnupg sudo
 
+      - name: Install dependencies (RHEL/CentOS/Amazon Linux)
+        if: contains(matrix.os, 'centos') || contains(matrix.os, 'rhel') || contains(matrix.os, 'amazonlinux')
+        run: yum install -y wget gnupg sudo
+
       - name: Run the Terraform installer script
-        run: sh ./terraform-installer.sh  # No sudo needed
+        run: sh ./terraform-installer.sh
 
       - name: Verify Terraform installation
         run: terraform --version
