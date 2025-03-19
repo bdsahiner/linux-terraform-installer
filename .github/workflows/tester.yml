@@ -68,7 +68,7 @@ jobs:
   centos:
     runs-on: ubuntu-latest
     container:
-      image: centos:7
+      image: centos:centos8
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
