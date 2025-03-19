@@ -9,32 +9,82 @@ on:
       - main
 
 jobs:
-  test:
+  ubuntu:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu, debian, fedora, zorinos, linuxmint, centos, rhel, amazonlinux]
     container:
-      image: ${{ matrix.os }}:latest
-
+      image: ubuntu:latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - run: apt-get update && apt-get install -y wget gpg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
 
-      - name: Install dependencies (Debian-based)
-        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'debian') || contains(matrix.os, 'zorinos') || contains(matrix.os, 'linuxmint')
-        run: apt-get update && apt-get install -y wget gpg sudo
+  debian:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: apt-get update && apt-get install -y wget gpg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
 
-      - name: Install dependencies (Fedora)
-        if: contains(matrix.os, 'fedora')
-        run: dnf install -y wget gnupg sudo
+  fedora:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: dnf install -y wget gnupg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
 
-      - name: Install dependencies (RHEL/CentOS/Amazon Linux)
-        if: contains(matrix.os, 'centos') || contains(matrix.os, 'rhel') || contains(matrix.os, 'amazonlinux')
-        run: yum install -y wget gnupg sudo
+  zorinos:
+    runs-on: ubuntu-latest
+    container:
+      image: zorinos:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: apt-get update && apt-get install -y wget gpg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
 
-      - name: Run the Terraform installer script
-        run: sh ./terraform-installer.sh
+  linuxmint:
+    runs-on: ubuntu-latest
+    container:
+      image: linuxmint:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: apt-get update && apt-get install -y wget gpg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
 
-      - name: Verify Terraform installation
-        run: terraform --version
+  centos:
+    runs-on: ubuntu-latest
+    container:
+      image: centos:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: yum install -y wget gnupg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
+
+  rhel:
+    runs-on: ubuntu-latest
+    container:
+      image: redhat/ubi8:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: yum install -y wget gnupg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
+
+  amazonlinux:
+    runs-on: ubuntu-latest
+    container:
+      image: amazonlinux:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: yum install -y wget gnupg sudo
+      - run: sh ./terraform-installer.sh
+      - run: terraform --version
