@@ -39,21 +39,6 @@ jobs:
       - run: sh ./terraform-installer.sh
       - run: terraform --version
 
-  zorinos:
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Mimic Zorin OS
-        run: |
-          apt-get update && apt-get install -y wget gpg sudo
-          echo "deb http://packages.linuxmint.com una main" | tee -a /etc/apt/sources.list.d/mint.list
-          wget -qO - https://linuxmint.com/keys/mint-signing-key.asc | apt-key add -
-          apt-get update
-      - run: sh ./terraform-installer.sh
-      - run: terraform --version
-
   linuxmint:
     runs-on: ubuntu-latest
     container:
